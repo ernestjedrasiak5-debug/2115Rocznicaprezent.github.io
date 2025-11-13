@@ -1,0 +1,670 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>4. rocznica</title>
+<style>
+  :root {
+    --bg: #000;
+    --accent: #ff2e2e;
+    --muted: #8b8b8b;
+    --glass: rgba(255,255,255,0.03);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family: Inter,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;
+    background: radial-gradient(circle at top, #150000 0%, #000 60%);
+    color:#fff;
+    overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+  }
+  .wrap{max-width:1000px;margin:36px auto;padding:20px;position:relative;z-index:2}
+  header{text-align:center;margin-bottom:18px}
+  h1{color:var(--accent);font-size:30px}
+  .sub{color:var(--muted);font-size:13px;margin-top:6px}
+
+  .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border:1px solid rgba(255,255,255,0.04);padding:18px;border-radius:14px;backdrop-filter:blur(6px)}
+  .grid{display:grid;grid-template-columns:1fr 340px;gap:16px}
+  .section{padding:6px}
+  h2{color:var(--accent);margin-bottom:6px}
+  .editable{min-height:120px;padding:10px;border-radius:10px;background:rgba(255,255,255,0.02);outline:none;overflow:auto}
+  .small{font-size:13px;color:var(--muted)}
+  input[type="text"], input[type="file"]{width:100%;padding:8px;border-radius:8px;border:none;margin-top:8px;background:rgba(255,255,255,0.02);color:#fff}
+  .controls{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+  .btn{background:var(--accent);border:none;padding:8px 12px;border-radius:8px;color:#111;cursor:pointer}
+  .btn.secondary{background:transparent;border:1px solid rgba(255,255,255,0.06);color:#fff}
+  footer{margin-top:18px;color:var(--muted);text-align:center;font-size:13px}
+
+  /* overlay - countdown */
+  .overlay{
+    position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(180deg, rgba(0,0,0,0.86), rgba(0,0,0,0.9));z-index:60;padding:20px;
+    backdrop-filter:blur(6px)
+  }
+  .countcard{background:linear-gradient(180deg, rgba(30,0,0,0.9), rgba(10,0,0,0.7));padding:26px;border-radius:12px;border:1px solid rgba(255,0,0,0.12);text-align:center;min-width:320px}
+  .big{font-size:40px;color:var(--accent);font-weight:700}
+  .timeparts{display:flex;gap:10px;justify-content:center;margin-top:16px}
+  .part{background:var(--glass);padding:10px 14px;border-radius:10px;min-width:64px}
+  .num{font-size:26px;font-weight:700}
+  .lbl{font-size:12px;color:var(--muted)}
+
+  /* hearts */
+  .heart{position:fixed;top:-10px;color:var(--accent);font-size:18px;animation:fall linear forwards;pointer-events:none}
+  @keyframes fall{
+    0%{transform:translateY(0) rotate(0deg);opacity:1}
+    100%{transform:translateY(110vh) rotate(360deg);opacity:0}
+  }
+
+  /* confetti */
+  .confetti{position:fixed;width:10px;height:10px;border-radius:2px;top:-10px;animation:drop linear forwards;pointer-events:none}
+  @keyframes drop{
+    0%{transform:translateY(0) rotate(0);opacity:1}
+    100%{transform:translateY(110vh) rotate(720deg);opacity:0}
+  }
+
+  /* media container hidden initially */
+  .hidden-media{display:none;opacity:0;transition:opacity 1s ease, transform 0.6s ease;transform:translateY(10px);margin-top:14px}
+  .hidden-media.show{display:block;opacity:1;transform:translateY(0)}
+
+  .gallery{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .gallery img{width:96px;height:96px;object-fit:cover;border-radius:8px;border:1px solid rgba(255,255,255,0.04)}
+  .media-preview video, .media-preview img{max-width:100%;border-radius:10px}
+
+  /* tiny invisible square - auth trigger */
+  #authSquare{
+    position:fixed;right:10px;bottom:10px;width:22px;height:22px;border-radius:4px;opacity:0.06;z-index:80;
+    background:linear-gradient(45deg, rgba(255,46,46,0.08), rgba(255,46,46,0.02));cursor:pointer;
+    /* very subtle border so you (owner) can sometimes spot it; others won't care */
+    border:1px solid rgba(255,255,255,0.02)
+  }
+
+  /* edit-only toolbar */
+  #editToolbar{display:none;margin-top:10px;gap:8px}
+  #editToolbar.show{display:flex}
+
+  @media (max-width:920px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>4. rocznica</h1>
+      <div class="sub">Odliczanie do 1 czerwca 2026 — po odliczaniu strona się odblokuje</div>
+    </header>
+
+    <main class="card">
+      <div class="grid">
+        <section class="section">
+          <h2>Podziękowania</h2>
+          <div id="thanks" class="editable" contenteditable="false">Wpisz tutaj swoje podziękowania — tylko w trybie edycji.</div>
+
+          <h2 style="margin-top:12px">Życzenia</h2>
+          <div id="wishes" class="editable" contenteditable="false">Tutaj wpisz życzenia — tylko w trybie edycji.</div>
+
+          <div id="editToolbar" class="controls">
+            <button id="generateBtn" class="btn">Generuj wersję do wysłania (pobierz)</button>
+            <button id="saveBtn" class="btn secondary">Zapisz</button>
+            <button id="clearBtn" class="btn secondary">Wyczyść lokalnie</button>
+          </div>
+        </section>
+
+        <aside class="section">
+          <h2>Media (zdjęcia / wideo / YouTube)</h2>
+          <input id="fileInput" type="file" accept="image/*,video/*" multiple style="display:none">
+          <label id="addFilesLabel" class="btn secondary" style="display:none;cursor:pointer;text-align:center">Dodaj pliki</label>
+
+          <input id="ytInput" type="text" placeholder="Opcjonalnie: link z YouTube" style="display:none">
+
+          <div class="small" style="margin-top:10px">Dodane pliki będą osadzone w gotowej wersji. YouTube działa przez iframe (wklej link).</div>
+
+          <div id="gallery" class="gallery" aria-live="polite"></div>
+
+          <div id="mediaPreview" class="media-preview" style="margin-top:12px"></div>
+        </aside>
+      </div>
+
+      <footer>Gotowe do udostępnienia. Tryb edycji dostępny po wpisaniu hasła.</footer>
+    </main>
+  </div>
+
+  <!-- overlay with countdown -->
+  <div id="overlay" class="overlay" role="dialog" aria-modal="true">
+    <div class="countcard" role="document">
+      <div class="big">Odliczanie</div>
+      <div class="sub" style="margin-top:8px">Do: 1 czerwca 2026</div>
+
+      <div class="timeparts" style="margin-top:14px">
+        <div class="part"><div class="num" id="days">0</div><div class="lbl">Dni</div></div>
+        <div class="part"><div class="num" id="hours">0</div><div class="lbl">Godz</div></div>
+        <div class="part"><div class="num" id="minutes">0</div><div class="lbl">Min</div></div>
+        <div class="part"><div class="num" id="seconds">0</div><div class="lbl">Sek</div></div>
+      </div>
+
+      <div style="margin-top:16px">
+        <button id="openNow" class="btn">Otwórz teraz</button>
+      </div>
+      <div style="margin-top:10px;color:var(--muted);font-size:13px">Po odblokowaniu: serduszka w tle, konfetti i publikacja mediów po 5 minutach.</div>
+    </div>
+  </div>
+
+  <!-- tiny auth square -->
+  <div id="authSquare" title="Autoryzacja"></div>
+
+  <script>
+    // ========== KONFIGURACJA ==========
+    const TARGET_DATE_ISO = '2026-06-01T00:00:00';
+    const EDIT_PASSWORD = 'OfwiE8ff'; // twoje hasło
+    const SHOW_MEDIA_AFTER_MS = 300000; // 5 minut = 300000 ms
+    const GENERATED_FILENAME = 'rocznica_gotowa.html';
+
+    // ========== ELEMENTY ==========
+    const overlay = document.getElementById('overlay');
+    const daysEl = document.getElementById('days');
+    const hoursEl = document.getElementById('hours');
+    const minsEl = document.getElementById('minutes');
+    const secsEl = document.getElementById('seconds');
+    const openNowBtn = document.getElementById('openNow');
+
+    const thanksEl = document.getElementById('thanks');
+    const wishesEl = document.getElementById('wishes');
+
+    const editToolbar = document.getElementById('editToolbar');
+    const generateBtn = document.getElementById('generateBtn');
+    const saveBtn = document.getElementById('saveBtn');
+    const clearBtn = document.getElementById('clearBtn');
+
+    const authSquare = document.getElementById('authSquare');
+
+    const fileInput = document.getElementById('fileInput');
+    const addFilesLabel = document.getElementById('addFilesLabel');
+    const ytInput = document.getElementById('ytInput');
+    const galleryEl = document.getElementById('gallery');
+    const mediaPreview = document.getElementById('mediaPreview');
+
+    // localStorage keys
+    const LS_UNLOCK = 'rocznica_unlock_v2';
+    const LS_THANKS = 'rocznica_thanks_v2';
+    const LS_WISHES = 'rocznica_wishes_v2';
+    const LS_MEDIA = 'rocznica_media_v2'; // JSON array of dataURLs with type info
+    const LS_YT = 'rocznica_yt_v2';
+
+    // internal state
+    let target = new Date(TARGET_DATE_ISO);
+    let mediaArray = []; // {type: 'image'|'video', data: dataURL}
+    let mediaTimer = null;
+    let editMode = false;
+
+    // ========== HELPERS ==========
+    function pad(n){return String(n).padStart(2,'0')}
+    function updateCountdown(){
+      const now = new Date();
+      const diff = target - now;
+      if (diff <= 0){
+        doUnlock();
+        return;
+      }
+      const d = Math.floor(diff / (1000*60*60*24));
+      const h = Math.floor((diff / (1000*60*60)) % 24);
+      const m = Math.floor((diff / (1000*60)) % 60);
+      const s = Math.floor((diff/1000) % 60);
+      daysEl.textContent = d;
+      hoursEl.textContent = pad(h);
+      minsEl.textContent = pad(m);
+      secsEl.textContent = pad(s);
+    }
+
+    function doUnlock(){
+      overlay.style.display = 'none';
+      localStorage.setItem(LS_UNLOCK, '1');
+      launchConfetti();
+      scheduleMediaReveal();
+    }
+
+    function scheduleMediaReveal(){
+      // if already revealed before, show immediately
+      const revealed = localStorage.getItem('rocznica_media_revealed_v2') === '1';
+      if (revealed){
+        showHiddenMedia();
+        return;
+      }
+      // schedule reveal after X ms
+      if (mediaTimer) clearTimeout(mediaTimer);
+      mediaTimer = setTimeout(()=>{
+        showHiddenMedia();
+        localStorage.setItem('rocznica_media_revealed_v2','1');
+      }, SHOW_MEDIA_AFTER_MS);
+    }
+
+    // hearts and confetti visual functions
+    function createHeart(){
+      const el = document.createElement('div');
+      el.className = 'heart';
+      el.style.left = (Math.random()*100) + 'vw';
+      el.style.fontSize = (12 + Math.random()*24) + 'px';
+      el.style.animationDuration = (4 + Math.random()*5) + 's';
+      el.innerHTML = '❤';
+      document.body.appendChild(el);
+      setTimeout(()=> el.remove(), 9000);
+    }
+
+    function launchConfetti(){
+      for (let i=0;i<180;i++){
+        const c = document.createElement('div');
+        c.className = 'confetti';
+        c.style.left = (Math.random()*100) + 'vw';
+        c.style.background = (Math.random()>0.5) ? '#ff2e2e' : '#fff';
+        c.style.width = (6 + Math.random()*10) + 'px';
+        c.style.height = (6 + Math.random()*10) + 'px';
+        c.style.animationDuration = (2 + Math.random()*3) + 's';
+        c.style.transform = 'translateY(0) rotate(' + (Math.random()*360) + 'deg)';
+        document.body.appendChild(c);
+        setTimeout(()=> c.remove(), 5000);
+      }
+    }
+
+    // ========== media handling ==========
+    function renderGallery(){
+      galleryEl.innerHTML = '';
+      mediaPreview.innerHTML = '';
+      mediaArray.forEach((m, idx) => {
+        if (m.type === 'image'){
+          const img = document.createElement('img');
+          img.src = m.data;
+          img.alt = 'zdjęcie';
+          img.title = 'Kliknij, aby powiększyć';
+          img.style.cursor = 'pointer';
+          img.addEventListener('click', ()=> {
+            mediaPreview.innerHTML = '';
+            const big = document.createElement('img');
+            big.src = m.data;
+            mediaPreview.appendChild(big);
+          });
+          galleryEl.appendChild(img);
+        } else if (m.type === 'video'){
+          const thumb = document.createElement('img');
+          // use first frame not available; just use a placeholder frame (video element not shown)
+          thumb.src = '';
+          // show small video icon placeholder
+          thumb.alt = 'wideo';
+          thumb.style.width = '96px';
+          thumb.style.height = '96px';
+          thumb.style.background = 'linear-gradient(180deg,#111,#222)';
+          thumb.style.borderRadius = '8px';
+          thumb.style.display = 'flex';
+          thumb.style.alignItems = 'center';
+          thumb.style.justifyContent = 'center';
+          thumb.style.color = '#fff';
+          thumb.style.fontSize = '12px';
+          thumb.style.textAlign = 'center';
+          thumb.innerText = 'Wideo';
+          thumb.style.paddingTop = '36px';
+          thumb.style.cursor = 'pointer';
+          thumb.addEventListener('click', ()=>{
+            mediaPreview.innerHTML = '';
+            const vid = document.createElement('video');
+            vid.src = m.data;
+            vid.controls = true;
+            vid.autoplay = false;
+            vid.style.borderRadius = '10px';
+            mediaPreview.appendChild(vid);
+          });
+          galleryEl.appendChild(thumb);
+        }
+      });
+
+      // if there's saved YouTube link, show iframe in preview (but only after reveal)
+      const yt = localStorage.getItem(LS_YT);
+      if (yt){
+        const small = document.createElement('div');
+        small.style.marginTop = '8px';
+        small.innerHTML = '<div class="small" style="margin-bottom:6px">YouTube (link):</div>';
+        const link = document.createElement('div');
+        link.textContent = yt;
+        link.style.fontSize = '12px';
+        link.style.color = 'var(--muted)';
+        small.appendChild(link);
+        galleryEl.appendChild(small);
+      }
+    }
+
+    function readFilesAndStore(files){
+      if (!files || files.length===0) return;
+      const readers = [];
+      for (let f of files){
+        readers.push(new Promise((res, rej)=>{
+          const r = new FileReader();
+          r.onload = e => {
+            const isVideo = f.type.startsWith('video');
+            mediaArray.push({type: isVideo ? 'video' : 'image', data: e.target.result});
+            res();
+          };
+          r.onerror = rej;
+          r.readAsDataURL(f);
+        }));
+      }
+      Promise.all(readers).then(()=> {
+        localStorage.setItem(LS_MEDIA, JSON.stringify(mediaArray));
+        renderGallery();
+      }).catch(()=> alert('Błąd podczas wczytywania plików'));
+    }
+
+    function showHiddenMedia(){
+      const container = document.querySelector('.hidden-media') || document.createElement('div');
+      container.className = 'hidden-media show';
+      // if already in DOM, do nothing; else append under main card
+      if (!document.querySelector('.hidden-media.show')){
+        const mainCard = document.querySelector('.card');
+        container.innerHTML = '';
+        // prefer preview: show either first video, else image gallery, else YouTube iframe if present
+        const yt = localStorage.getItem(LS_YT);
+        if (mediaArray.length>0){
+          // show first media prominently
+          const first = mediaArray[0];
+          if (first.type === 'video'){
+            const v = document.createElement('video');
+            v.src = first.data;
+            v.controls = true;
+            v.autoplay = false;
+            v.style.maxWidth = '100%';
+            v.style.borderRadius = '12px';
+            container.appendChild(v);
+          } else {
+            const img = document.createElement('img');
+            img.src = first.data;
+            img.style.maxWidth = '100%';
+            img.style.borderRadius = '12px';
+            container.appendChild(img);
+          }
+        } else if (yt){
+          // build iframe
+          const id = parseYouTubeID(yt);
+          if (id){
+            const iframe = document.createElement('iframe');
+            iframe.width = '560';
+            iframe.height = '315';
+            iframe.src = 'https://www.youtube.com/embed/' + id;
+            iframe.frameBorder = '0';
+            iframe.allow = 'autoplay; encrypted-media';
+            container.appendChild(iframe);
+          }
+        }
+        // also add small gallery if more items
+        if (mediaArray.length>1){
+          const more = document.createElement('div');
+          more.className = 'gallery';
+          more.style.marginTop = '10px';
+          mediaArray.forEach(m=>{
+            if (m.type==='image'){
+              const im = document.createElement('img');
+              im.src = m.data;
+              im.style.width = '120px';
+              im.style.height = '120px';
+              im.style.objectFit = 'cover';
+              im.style.borderRadius = '8px';
+              more.appendChild(im);
+            }
+          });
+          container.appendChild(more);
+        }
+        mainCard.parentNode.insertBefore(container, mainCard.nextSibling);
+      }
+    }
+
+    function parseYouTubeID(url){
+      if (!url) return null;
+      try{
+        // common patterns
+        if (url.includes('youtu.be/')) return url.split('youtu.be/')[1].split(/[?&]/)[0];
+        if (url.includes('youtube.com/watch')) return new URL(url).searchParams.get('v');
+        if (url.includes('youtube.com/embed/')) return url.split('youtube.com/embed/')[1].split(/[?&]/)[0];
+      }catch(e){ return null; }
+      return null;
+    }
+
+    // ========== persist/load ==========
+    function saveAllLocal(){
+      localStorage.setItem(LS_THANKS, thanksEl.innerHTML);
+      localStorage.setItem(LS_WISHES, wishesEl.innerHTML);
+      localStorage.setItem(LS_MEDIA, JSON.stringify(mediaArray));
+      localStorage.setItem(LS_YT, ytInput.value.trim());
+      alert('Zapisano lokalnie');
+    }
+
+    function clearAllLocal(){
+      if (!confirm('Usunąć wszystkie lokalnie zapisane dane (uwaga: nieodwracalne)?')) return;
+      localStorage.removeItem(LS_THANKS);
+      localStorage.removeItem(LS_WISHES);
+      localStorage.removeItem(LS_MEDIA);
+      localStorage.removeItem(LS_YT);
+      localStorage.removeItem(LS_UNLOCK);
+      localStorage.removeItem('rocznica_media_revealed_v2');
+      mediaArray = [];
+      location.reload();
+    }
+
+    function loadAllLocal(){
+      const t = localStorage.getItem(LS_THANKS);
+      const w = localStorage.getItem(LS_WISHES);
+      const m = localStorage.getItem(LS_MEDIA);
+      const yt = localStorage.getItem(LS_YT);
+      if (t) thanksEl.innerHTML = t;
+      if (w) wishesEl.innerHTML = w;
+      if (m){
+        try{ mediaArray = JSON.parse(m) }catch(e){ mediaArray = [] }
+      } else mediaArray = [];
+      if (yt) ytInput.value = yt;
+      renderGallery();
+      // if page already unlocked earlier -> hide overlay
+      if (localStorage.getItem(LS_UNLOCK) === '1'){
+        overlay.style.display = 'none';
+        scheduleMediaReveal();
+      }
+    }
+
+    // ========== edit mode handling ==========
+    function enterEditMode(){
+      editMode = true;
+      thanksEl.contentEditable = 'true';
+      wishesEl.contentEditable = 'true';
+      editToolbar.classList.add('show');
+      addFilesLabel.style.display = 'inline-block';
+      ytInput.style.display = 'block';
+      fileInput.style.display = 'none'; // file input hidden, label triggers it
+      addFilesLabel.onclick = () => fileInput.click();
+      // small visual hint
+      addFilesLabel.textContent = 'Dodaj pliki';
+      ytInput.placeholder = 'Wklej link z YouTube (opcjonalnie)';
+      // scroll into view to edit
+      thanksEl.focus();
+    }
+
+    function exitEditMode(){
+      editMode = false;
+      thanksEl.contentEditable = 'false';
+      wishesEl.contentEditable = 'false';
+      editToolbar.classList.remove('show');
+      addFilesLabel.style.display = 'none';
+      ytInput.style.display = 'none';
+    }
+
+    authSquare.addEventListener('click', ()=>{
+      const pw = prompt('Hasło trybu edycji:');
+if (pw && pw.trim() === 'OfwiE8ff') {   // trim usuwa spacje z początku/końca
+  enterEditMode();
+  alert('Tryb edycji aktywowany. Pamiętaj: zapisz zmiany przyciskiem "Zapisz" i możesz wygenerować plik.');
+} else if(pw) {
+  alert('Błędne hasło.');
+}
+    });
+
+    // ========== generate downloadable HTML ==========
+    function generateStaticHTML(){
+      // Build HTML string which contains current contents + media embedded + no edit controls
+      const title = '4. rocznica';
+      const thanksHTML = thanksEl.innerHTML;
+      const wishesHTML = wishesEl.innerHTML;
+      const yt = ytInput.value.trim();
+      // collect mediaArray to embed
+      const mediaJSON = JSON.stringify(mediaArray);
+      // static CSS (kept minimal, but matching theme)
+      const css = `
+:root{--bg:#000;--accent:#ff2e2e;--muted:#8b8b8b}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Inter,system-ui,-apple-system,'Segoe UI',Roboto,Arial;background:radial-gradient(circle at top,#150000 0%,#000 60%);color:#fff;padding:24px}
+.container{max-width:1000px;margin:0 auto}
+h1{color:var(--accent);font-size:32px}
+.card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:18px;border-radius:12px;border:1px solid rgba(255,255,255,0.03)}
+.gallery{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.gallery img{width:120px;height:120px;object-fit:cover;border-radius:8px}
+.video{max-width:100%;border-radius:10px}
+.small{color:var(--muted);font-size:13px;margin-top:8px}
+      `;
+      // Build media HTML: if first media is video show, else image; include gallery; include youtube if provided
+      let mediaHtml = '';
+      try{
+        const medias = JSON.parse(mediaJSON || '[]');
+        if (medias.length>0){
+          const first = medias[0];
+          if (first.type === 'video'){
+            mediaHtml += `<video class="video" controls src="${first.data}"></video>`;
+          } else {
+            mediaHtml += `<img class="video" src="${first.data}" alt="zdjęcie">`;
+          }
+          if (medias.length>1){
+            mediaHtml += `<div class="gallery">`;
+            for (let i=0;i<medias.length;i++){
+              if (medias[i].type==='image'){
+                mediaHtml += `<img src="${medias[i].data}" alt="img${i}">`;
+              }
+            }
+            mediaHtml += `</div>`;
+          }
+        } else if (yt){
+          // embed youtube
+          const id = (function(u){ try{
+            if (u.includes('youtu.be/')) return u.split('youtu.be/')[1].split(/[?&]/)[0];
+            if (u.includes('youtube.com/watch')) return new URL(u).searchParams.get('v');
+            if (u.includes('youtube.com/embed/')) return u.split('youtube.com/embed/')[1].split(/[?&]/)[0];
+          }catch(e){return null}})(yt);
+          if (id) mediaHtml += `<iframe class="video" width="560" height="315" src="https://www.youtube.com/embed/${id}" frameborder="0" allow="autoplay; encrypted-media"></iframe>`;
+        }
+      }catch(e){
+        mediaHtml = '';
+      }
+
+      const finalHtml = `<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>${escapeHtml(title)}</title>
+<style>${css}</style>
+</head>
+<body>
+  <div class="container">
+    <header><h1>4. rocznica</h1><div class="small">Zawartość przygotowana przez autora</div></header>
+    <main class="card">
+      <h2>Podziękowania</h2>
+      <div>${thanksHTML}</div>
+      <h2 style="margin-top:12px">Życzenia</h2>
+      <div>${wishesHTML}</div>
+      <div class="small" style="margin-top:14px">Media:</div>
+      <div style="margin-top:8px">${mediaHtml}</div>
+    </main>
+    <footer style="margin-top:18px" class="small">Plik wygenerowano jako statyczna wersja do udostępnienia.</footer>
+  </div>
+</body>
+</html>`;
+
+      // trigger download
+      const blob = new Blob([finalHtml], {type: 'text/html;charset=utf-8'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = GENERATED_FILENAME;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      alert('Pobrano plik: ' + GENERATED_FILENAME + '\nMożesz go wysłać — inni zobaczą statyczną wersję (bez edycji).');
+    }
+
+    // escape helper
+    function escapeHtml(s){
+      return s.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    // ========== listeners ==========
+    openNowBtn.addEventListener('click', ()=> doUnlock());
+    setInterval(updateCountdown, 1000);
+
+    // file input handling (multiple)
+    fileInput.addEventListener('change', (e)=>{
+      const files = Array.from(e.target.files || []);
+      if (files.length === 0) return;
+      readFilesAndStore(files);
+      // reset input so same files can be reselected later
+      fileInput.value = '';
+    });
+
+    // save and clear
+    saveBtn.addEventListener('click', saveAllLocal);
+    clearBtn.addEventListener('click', clearAllLocal);
+
+    // generate
+    generateBtn.addEventListener('click', ()=> {
+      if (!confirm('Wygenerować statyczny plik HTML z aktualnymi treściami i mediami?')) return;
+      generateStaticHTML();
+    });
+
+    // yt input changes saved to local
+    ytInput.addEventListener('change', ()=>{
+      localStorage.setItem(LS_YT, ytInput.value.trim());
+      renderGallery();
+    });
+
+    // tiny visual heart spawn
+    setInterval(createHeart, 500);
+
+    // ========== initial load ==========
+    function init(){
+      // create hidden media container element (the one shown after 5 min)
+      // (it's created on demand inside showHiddenMedia)
+      loadAllLocal();
+      updateCountdown();
+      // if overlay hidden (unlocked), schedule media reveal
+      if (localStorage.getItem(LS_UNLOCK) === '1'){
+        overlay.style.display = 'none';
+        scheduleMediaReveal();
+      } else {
+        overlay.style.display = 'flex';
+      }
+      // show gallery preview even without edit mode (read-only)
+      renderGallery();
+    }
+
+    init();
+
+    // small UX: double click on footer area to quickly toggle edit mode (owner convenience)
+    // but keep primary auth via authSquare
+    document.querySelector('footer').addEventListener('dblclick', ()=>{
+      const pw = prompt('Hasło trybu edycji:');
+      if (pw === EDIT_PASSWORD) enterEditMode();
+      else if (pw) alert('Błędne hasło.');
+    });
+
+    // Expose showHiddenMedia when localStorage indicates media revealed (in case page reload)
+    if (localStorage.getItem('rocznica_media_revealed_v2') === '1'){
+      // show immediately (if unlocked)
+      if (localStorage.getItem(LS_UNLOCK) === '1') showHiddenMedia();
+    }
+
+    // Prevent accidental editing by disabling drag/drop of files onto page (keeps UX clean)
+    window.addEventListener('dragover', function(e){ e.preventDefault(); }, false);
+    window.addEventListener('drop', function(e){ e.preventDefault(); }, false);
+  </script>
+</body>
+</html>
