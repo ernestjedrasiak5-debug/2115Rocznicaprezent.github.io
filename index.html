@@ -236,7 +236,23 @@
       if (diff <= 0){
         doUnlock();
         return;
-      }
+     const bgMusic = document.getElementById('bgMusic');
+  if (bgMusic) {
+    bgMusic.volume = 0;
+    bgMusic.play().catch(() => {
+      document.addEventListener('click', () => {
+        bgMusic.play();
+      }, { once: true });
+    });
+
+    let v = 0;
+    const target = 0.22;
+    const fade = setInterval(() => {
+      v += 0.01;
+      bgMusic.volume = Math.min(v, target);
+      if (v >= target) clearInterval(fade);
+    }, 200);
+  } }
       const d = Math.floor(diff / (1000*60*60*24));
       const h = Math.floor((diff / (1000*60*60)) % 24);
       const m = Math.floor((diff / (1000*60)) % 60);
@@ -697,5 +713,8 @@ h1{color:var(--accent);font-size:32px}
     window.addEventListener('dragover', function(e){ e.preventDefault(); }, false);
     window.addEventListener('drop', function(e){ e.preventDefault(); }, false);
   </script>
+  <audio id="bgMusic" loop>
+  <source src="muzyka.mp3" type="audio/mpeg">
+  </audio>
 </body>
 </html>
